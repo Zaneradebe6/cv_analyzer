@@ -1,4 +1,5 @@
 import streamlit as st
+from ai_feedback import get_ai_feedback
 from pdf_extractor import extract_text_from_pdf
 from rules_engine import run_all_checks
 
@@ -40,3 +41,15 @@ if uploaded_file is not None:
 
         with st.expander("See extracted text"):
             st.text(text)
+
+        st.subheader("AI-Powered Feedback")
+        st.write("Get personalized, in-depth feedback from an AI reviewer, beyond the rule-based checks above.")
+
+        if st.button("Get AI Feedback"):
+            with st.spinner("Analyzing your CV with AI... this can take a few seconds"):
+                try:
+                    ai_result = get_ai_feedback(text)
+                    st.markdown(ai_result)
+                except Exception as e:
+                    st.error(f"Something went wrong getting AI feedback: {e}")
+        

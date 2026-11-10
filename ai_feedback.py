@@ -57,26 +57,26 @@ def get_ai_feedback(cv_text):
 
     prompt = PROMPT_INTRO + "\n\nCV TEXT:\n" + cv_text[:MAX_CV_CHARS]
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.groq.com/openai/v1",
-        timeout=30,
-    )
-
     try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+            timeout=30,
+        )
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=600,
         )
     except AuthenticationError:
-        raise AIFeedbackError("AI feedback is temporarily unavailable. Please try again later.")
+        raise AIFeedbackError("AI feedback is temporarily unavailable (key problem). Please try again later.")
     except RateLimitError:
         raise AIFeedbackError("AI feedback is busy right now. Please try again in a minute.")
     except (APIConnectionError, APITimeoutError):
         raise AIFeedbackError("Couldn't reach the AI service. Please try again.")
-    except Exception:
-        raise AIFeedbackError("Something went wrong getting AI feedback. Please try again later.")
+    except Exception as e:
+        print("AI feedback error:", type(e).__name__, str(e)[:300], file=sys.stderr)
+        raise AIFeedbackError(f"Something went wrong ({type(e).__name__}). Please try again later.")
 
     return response.choices[0].message.content
 

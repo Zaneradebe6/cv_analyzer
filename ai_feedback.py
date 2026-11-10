@@ -9,8 +9,16 @@ from openai import (
     APITimeoutError,
 )
 
-# Limit how much CV text is sent to the API (keeps costs and rate limits in check)
 MAX_CV_CHARS = 6000
+
+PROMPT_INTRO = (
+    "You are an experienced recruiter and CV coach. "
+    "Review the following CV text and give specific, actionable feedback. "
+    "Focus on: (1) your overall impression in 2-3 sentences, "
+    "(2) the 3 most important improvements, with concrete examples, "
+    "(3) one strength worth keeping. "
+    "Be direct and specific. Avoid generic advice without showing exactly where."
+)
 
 
 class AIFeedbackError(Exception):
@@ -18,7 +26,6 @@ class AIFeedbackError(Exception):
 
 
 def _get_api_key():
-    """Look for the key in Streamlit Secrets first, then environment, then a local .env file."""
     key = None
 
     try:
@@ -48,6 +55,37 @@ def get_ai_feedback(cv_text):
             "AI feedback isn't set up right now. The rule-based results above still work."
         )
 
-    cv_text = cv_text[:MAX_CV_CHARS]
+    prompt = PROMPT_INTRO + "\n\nCV TEXT:\n" + cv_text[:MAX_CV_CHARS]
 
-    prompt = f"""You are an
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1",
+        timeout=30,
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=600,
+        )
+    except AuthenticationError:
+        raise AIFeedbackError("AI feedback is temporarily unavailable. Please try again later.")
+    except RateLimitError:
+        raise AIFeedbackError("AI feedback is busy right now. Please try again in a minute.")
+    except (APIConnectionError, APITimeoutError):
+        raise AIFeedbackError("Couldn't reach the AI service. Please try again.")
+    except Exception:
+        raise AIFeedbackError("Something went wrong getting AI feedback. Please try again later.")
+
+    return response.choices[0].message.content
+
+
+if __name__ == "__main__":
+    from pdf_extractor import extract_text_from_pdf
+
+    if len(sys.argv) < 2:
+        print("Usage: python ai_feedback.py path/to/cv.pdf")
+        sys.exit(1)
+
+    print(get_ai_feedback(extract_text_from_pdf(sys.argv[1])))

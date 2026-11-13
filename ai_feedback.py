@@ -64,7 +64,7 @@ def get_ai_feedback(cv_text):
             timeout=30,
         )
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=600,
         )

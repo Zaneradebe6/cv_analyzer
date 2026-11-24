@@ -1,6 +1,7 @@
 # CV Analyzer
-
+![CI](https://github.com/Zaneradebe6/cv_analyzer/actions/workflows/ci.yml/badge.svg)
 A Python web app that analyzes CVs/resumes (PDF) and gives instant, structured feedback on formatting, wording, and common weaknesses — built after noticing my own CV needed exactly this kind of feedback while job hunting.
+
 
 
 
